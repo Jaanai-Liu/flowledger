@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">FlowLedger</string>
+    <string name="dashboard">首页</string>
+    <string name="transactions">账单</string>
+    <string name="statistics">统计</string>
+    <string name="profile">我的</string>
+    <string name="add_transaction">添加记录</string>
+    <string name="edit_transaction">编辑记录</string>
+    <string name="transaction_detail">交易详情</string>
+    <string name="accounts">账户管理</string>
+    <string name="categories">分类管理</string>
+    <string name="payment_methods">支付方式</string>
+    <string name="recurring_rules">周期收支</string>
+    <string name="settings">设置</string>
+    <string name="backup_restore">备份与恢复</string>
+    <string name="security">安全设置</string>
+    <string name="about">关于</string>
+    <string name="lock_title">请验证身份以解锁</string>
+    <string name="notification_service_label">FlowLedger 通知监听</string>
+    <string name="notification_service_description">监听支付通知以自动记账，数据完全本地存储</string>
+</resources>
