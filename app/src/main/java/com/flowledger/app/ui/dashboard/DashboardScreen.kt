@@ -50,7 +50,6 @@ import com.flowledger.app.util.DateUtils
 fun DashboardScreen(
     onNavigateToTransaction: (Long) -> Unit,
     onNavigateToAddTransaction: () -> Unit,
-    onNavigateToStatistics: () -> Unit,
     viewModel: DashboardViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsState()
@@ -101,22 +100,11 @@ fun DashboardScreen(
                 }
 
                 item {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            "最近记录",
-                            style = MaterialTheme.typography.titleMedium
-                        )
-                        Text(
-                            "查看全部",
-                            style = MaterialTheme.typography.labelLarge,
-                            color = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.clickable { onNavigateToStatistics() }
-                        )
-                    }
+                    Text(
+                        "最近记录",
+                        style = MaterialTheme.typography.titleMedium,
+                        modifier = Modifier.padding(top = 4.dp)
+                    )
                     Spacer(modifier = Modifier.height(8.dp))
                 }
 

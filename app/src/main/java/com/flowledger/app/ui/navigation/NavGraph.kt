@@ -49,9 +49,6 @@ fun NavGraph(navController: NavHostController) {
                 },
                 onNavigateToAddTransaction = {
                     navController.navigate(Screen.AddTransaction.createRoute())
-                },
-                onNavigateToStatistics = {
-                    navController.navigate(Screen.Statistics.route)
                 }
             )
         }

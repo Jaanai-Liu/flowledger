@@ -23,6 +23,7 @@ class SettingsRepository @Inject constructor(
         private val KEY_LOCK_ENABLED = booleanPreferencesKey("lock_enabled")
         private val KEY_DEFAULT_CURRENCY = stringPreferencesKey("default_currency")
         private val KEY_AUTO_CATEGORIZE = booleanPreferencesKey("auto_categorize")
+        private val KEY_CHART_RANGE = stringPreferencesKey("chart_range")
     }
 
     val isLockEnabled: Flow<Boolean> = context.dataStore.data.map { preferences ->
@@ -52,6 +53,16 @@ class SettingsRepository @Inject constructor(
     suspend fun setAutoCategorize(enabled: Boolean) {
         context.dataStore.edit { preferences ->
             preferences[KEY_AUTO_CATEGORIZE] = enabled
+        }
+    }
+
+    val chartRange: Flow<String> = context.dataStore.data.map { preferences ->
+        preferences[KEY_CHART_RANGE] ?: "WEEK"
+    }
+
+    suspend fun setChartRange(range: String) {
+        context.dataStore.edit { preferences ->
+            preferences[KEY_CHART_RANGE] = range
         }
     }
 }

@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.flowledger.app.data.local.dao.CategorySum
 import com.flowledger.app.data.local.dao.DailySummary
+import com.flowledger.app.data.repository.SettingsRepository
 import com.flowledger.app.data.repository.TransactionRepository
 import com.flowledger.app.util.DateUtils
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -12,61 +13,147 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.time.LocalDate
 import javax.inject.Inject
 
+enum class ChartRange(val days: Int, val label: String) {
+    WEEK(7, "7天"),
+    HALF_MONTH(15, "15天"),
+    MONTH(30, "30天")
+}
+
+data class MonthSummary(
+    val year: Int,
+    val month: Int,
+    val income: Long,
+    val expense: Long
+)
+
 data class StatisticsState(
-    val dailySummaries: List<DailySummary> = emptyList(),
-    val categorySums: List<CategorySum> = emptyList(),
+    val currentYear: Int = LocalDate.now().year,
+    val currentMonth: Int = LocalDate.now().monthValue,
+    val monthLabel: String = "",
     val totalIncome: Long = 0,
     val totalExpense: Long = 0,
-    val startDate: Long = DateUtils.currentMonthStart(),
-    val endDate: Long = DateUtils.currentMonthEnd(),
+    val dailySummaries: List<DailySummary> = emptyList(),
+    val categorySums: List<CategorySum> = emptyList(),
+    val selectedRange: ChartRange = ChartRange.WEEK,
+    val monthSummaries: List<MonthSummary> = emptyList(), // past 12 months
     val isLoading: Boolean = true
 )
 
 @HiltViewModel
 class StatisticsViewModel @Inject constructor(
-    private val transactionRepo: TransactionRepository
+    private val transactionRepo: TransactionRepository,
+    private val settingsRepo: SettingsRepository
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(StatisticsState())
     val state: StateFlow<StatisticsState> = _state.asStateFlow()
 
     init {
-        loadData()
+        viewModelScope.launch {
+            settingsRepo.chartRange.collect { rangeStr ->
+                val range = try {
+                    ChartRange.valueOf(rangeStr)
+                } catch (_: Exception) {
+                    ChartRange.WEEK
+                }
+                _state.update { it.copy(selectedRange = range) }
+            }
+        }
+        loadMonthData()
+        loadMonthOverMonth()
     }
 
-    fun loadData(startDate: Long = DateUtils.currentMonthStart(), endDate: Long = DateUtils.currentMonthEnd()) {
-        _state.update { it.copy(startDate = startDate, endDate = endDate, isLoading = true) }
+    fun selectRange(range: ChartRange) {
+        _state.update { it.copy(selectedRange = range) }
+        viewModelScope.launch { settingsRepo.setChartRange(range.name) }
+        loadDailyData()
+    }
+
+    fun navigateToMonth(year: Int, month: Int) {
+        _state.update { it.copy(currentYear = year, currentMonth = month) }
+        loadMonthData()
+    }
+
+    fun previousMonth() {
+        val s = _state.value
+        if (s.currentMonth == 1) {
+            navigateToMonth(s.currentYear - 1, 12)
+        } else {
+            navigateToMonth(s.currentYear, s.currentMonth - 1)
+        }
+    }
+
+    fun nextMonth() {
+        val s = _state.value
+        val now = LocalDate.now()
+        if (s.currentYear == now.year && s.currentMonth == now.monthValue) return // can't go past current
+        if (s.currentMonth == 12) {
+            navigateToMonth(s.currentYear + 1, 1)
+        } else {
+            navigateToMonth(s.currentYear, s.currentMonth + 1)
+        }
+    }
+
+    private fun loadMonthData() {
+        val s = _state.value
+        val startDate = DateUtils.monthStart(s.currentYear, s.currentMonth)
+        val endDate = DateUtils.monthEnd(s.currentYear, s.currentMonth)
+
+        _state.update {
+            it.copy(
+                monthLabel = DateUtils.formatMonthYear(s.currentYear, s.currentMonth),
+                isLoading = true
+            )
+        }
+
         viewModelScope.launch {
             val income = transactionRepo.getTotalIncome(startDate, endDate)
             val expense = transactionRepo.getTotalExpense(startDate, endDate)
             _state.update { it.copy(totalIncome = income, totalExpense = expense) }
         }
-        viewModelScope.launch {
-            val daily = transactionRepo.getDailySummary(startDate, endDate)
-            _state.update { it.copy(dailySummaries = daily) }
-        }
+
         viewModelScope.launch {
             val category = transactionRepo.getExpenseByCategory(startDate, endDate)
             _state.update { it.copy(categorySums = category, isLoading = false) }
         }
+
+        loadDailyData()
     }
 
-    fun loadCurrentMonth() {
-        val today = DateUtils.today()
-        loadData(
-            startDate = DateUtils.monthStart(today.year, today.monthValue),
-            endDate = DateUtils.monthEnd(today.year, today.monthValue)
-        )
+    private fun loadDailyData() {
+        val s = _state.value
+        val endDate = DateUtils.todayEpochDay()
+        val startDate = endDate - s.selectedRange.days + 1
+
+        viewModelScope.launch {
+            val daily = transactionRepo.getDailySummary(startDate, endDate)
+            _state.update { it.copy(dailySummaries = daily) }
+        }
     }
 
-    fun loadPreviousMonth() {
-        val today = DateUtils.today()
-        val prevMonth = today.minusMonths(1)
-        loadData(
-            startDate = DateUtils.monthStart(prevMonth.year, prevMonth.monthValue),
-            endDate = DateUtils.monthEnd(prevMonth.year, prevMonth.monthValue)
-        )
+    private fun loadMonthOverMonth() {
+        viewModelScope.launch {
+            val now = LocalDate.now()
+            val summaries = mutableListOf<MonthSummary>()
+            for (i in 11 downTo 0) {
+                val month = now.minusMonths(i.toLong())
+                val startDate = DateUtils.monthStart(month.year, month.monthValue)
+                val endDate = DateUtils.monthEnd(month.year, month.monthValue)
+                val income = transactionRepo.getTotalIncome(startDate, endDate)
+                val expense = transactionRepo.getTotalExpense(startDate, endDate)
+                summaries.add(
+                    MonthSummary(
+                        year = month.year,
+                        month = month.monthValue,
+                        income = income,
+                        expense = expense
+                    )
+                )
+            }
+            _state.update { it.copy(monthSummaries = summaries) }
+        }
     }
 }
