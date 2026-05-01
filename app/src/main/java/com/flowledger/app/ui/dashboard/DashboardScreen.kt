@@ -34,7 +34,6 @@ import androidx.compose.material.icons.automirrored.rounded.TrendingUp
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -98,9 +97,8 @@ fun DashboardScreen(
                 // Notification permission prompt
                 item {
                     val context = LocalContext.current
-                    val isListenerEnabled = remember {
+                    val isListenerEnabled =
                         com.flowledger.app.util.NotificationPermissionHelper.isListenerEnabled(context)
-                    }
                     if (!isListenerEnabled) {
                         NotificationPermissionBanner(
                             onClick = {
