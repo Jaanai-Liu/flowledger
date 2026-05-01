@@ -357,7 +357,8 @@ private fun CategoryRow(cat: CategorySum, total: Long) {
         ) {
             val trackColor = MaterialTheme.colorScheme.surfaceVariant
             val fillColor = ExpenseRed.copy(alpha = 0.6f)
-            val corner = androidx.compose.ui.geometry.CornerRadius(6.dp.toPx())
+            val density = androidx.compose.ui.platform.LocalDensity.current
+            val corner = with(density) { androidx.compose.ui.geometry.CornerRadius(6.dp.toPx()) }
             // Background track
             Canvas(modifier = Modifier.fillMaxSize()) {
                 drawRoundRect(
