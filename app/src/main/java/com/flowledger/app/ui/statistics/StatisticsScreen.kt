@@ -278,65 +278,46 @@ private fun MonthSummaryCard(income: Long, expense: Long) {
 @Composable
 private fun DailyLineChart(dailySummaries: List<DailySummary>) {
     val maxVal = dailySummaries.maxOf { it.expense }.coerceAtLeast(1)
-    val yLabels = remember(maxVal) { buildYAxisLabels(maxVal) }
-    val labelWidth = 50.dp
     val textColor = MaterialTheme.colorScheme.onSurfaceVariant
-    val density = androidx.compose.ui.platform.LocalDensity.current
+    val maxLabel = remember(maxVal) { "¥${"%.0f".format(maxVal / 100.0)}" }
 
     Card(modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(start = 4.dp, end = 12.dp, top = 12.dp, bottom = 4.dp)) {
-            Row {
-                // Y axis labels
-                Column(modifier = Modifier.width(labelWidth).height(160.dp)) {
-                    yLabels.reversed().forEachIndexed { index, label ->
-                        Box(
-                            modifier = Modifier
-                                .weight(if (index == yLabels.lastIndex) 0f else 1f)
-                                .fillMaxWidth(),
-                            contentAlignment = Alignment.CenterEnd
-                        ) {
-                            Text(
-                                if (label == 0L) "0" else "${label / 100}",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = textColor,
-                                maxLines = 1
-                            )
-                        }
-                    }
+        Column(modifier = Modifier.padding(start = 8.dp, end = 12.dp, top = 8.dp, bottom = 4.dp)) {
+            // Max value label
+            Text(maxLabel, style = MaterialTheme.typography.labelSmall, color = textColor)
+            Canvas(modifier = Modifier.fillMaxWidth().height(150.dp)) {
+                if (dailySummaries.size < 2) return@Canvas
+                val stepX = size.width / (dailySummaries.size - 1).coerceAtLeast(1)
+                val gridColor = textColor.copy(alpha = 0.12f)
+
+                // Horizontal grid lines at 25%, 50%, 75%
+                for (pct in listOf(0.25f, 0.5f, 0.75f)) {
+                    val y = size.height * (1f - pct)
+                    val labelVal = (maxVal * pct).toLong()
+                    drawLine(gridColor, Offset(0f, y), Offset(size.width, y), strokeWidth = 1.dp.toPx())
                 }
-                // Chart area
-                Canvas(modifier = Modifier.weight(1f).height(160.dp)) {
-                    if (dailySummaries.size < 2) return@Canvas
-                    val stepX = size.width / (dailySummaries.size - 1).coerceAtLeast(1)
-                    val gridColor = textColor.copy(alpha = 0.15f)
 
-                    // Horizontal grid lines
-                    yLabels.forEach { v ->
-                        val y = size.height - (v.toFloat() / maxVal) * size.height
-                        drawLine(gridColor, Offset(0f, y), Offset(size.width, y), strokeWidth = 1.dp.toPx())
-                    }
-
-                    // Line
-                    val path = Path()
-                    dailySummaries.forEachIndexed { index, day ->
-                        val x = index * stepX
-                        val y = size.height - (day.expense.toFloat() / maxVal) * size.height
-                        if (index == 0) path.moveTo(x, y) else path.lineTo(x, y)
-                    }
-                    drawPath(path, color = ExpenseRed.copy(alpha = 0.7f), style = Stroke(width = 3.dp.toPx(), cap = StrokeCap.Round))
-                    // Dots
-                    dailySummaries.forEachIndexed { index, day ->
-                        val x = index * stepX
-                        val y = size.height - (day.expense.toFloat() / maxVal) * size.height
-                        drawCircle(color = ExpenseRed, radius = 3.dp.toPx(), center = Offset(x, y))
-                    }
+                // Line
+                val path = Path()
+                dailySummaries.forEachIndexed { index, day ->
+                    val x = index * stepX
+                    val y = size.height - (day.expense.toFloat() / maxVal) * size.height
+                    if (index == 0) path.moveTo(x, y) else path.lineTo(x, y)
+                }
+                drawPath(path, color = ExpenseRed.copy(alpha = 0.7f), style = Stroke(width = 3.dp.toPx(), cap = StrokeCap.Round))
+                // Dots
+                dailySummaries.forEachIndexed { index, day ->
+                    val x = index * stepX
+                    val y = size.height - (day.expense.toFloat() / maxVal) * size.height
+                    drawCircle(color = ExpenseRed, radius = 3.dp.toPx(), center = Offset(x, y))
                 }
             }
-            // X axis labels
+            // X axis labels + "0" label
             Row(
-                modifier = Modifier.fillMaxWidth().padding(start = labelWidth),
+                modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
+                Text("¥0", style = MaterialTheme.typography.labelSmall, color = textColor)
                 if (dailySummaries.isNotEmpty()) {
                     Text(
                         DateUtils.formatShortDate(dailySummaries.first().date),
@@ -352,20 +333,6 @@ private fun DailyLineChart(dailySummaries: List<DailySummary>) {
             }
         }
     }
-}
-
-private fun buildYAxisLabels(maxVal: Long): List<Long> {
-    val step = when {
-        maxVal <= 5000L -> 1000L       // ¥10 steps
-        maxVal <= 20000L -> 5000L      // ¥50 steps
-        maxVal <= 100000L -> 20000L    // ¥200 steps
-        else -> 50000L                  // ¥500 steps
-    }
-    val labels = mutableListOf(0L)
-    while (labels.last() + step <= maxVal) {
-        labels.add(labels.last() + step)
-    }
-    return labels
 }
 
 @Composable
@@ -464,77 +431,55 @@ private fun CategoryRow(cat: CategorySum, total: Long) {
 @Composable
 private fun MonthOverMonthChart(monthSummaries: List<MonthSummary>) {
     val maxVal = monthSummaries.maxOf { maxOf(it.income, it.expense) }.coerceAtLeast(1)
-    val yLabels = remember(maxVal) { buildYAxisLabels(maxVal) }
-    val labelWidth = 50.dp
     val textColor = MaterialTheme.colorScheme.onSurfaceVariant
+    val maxLabel = remember(maxVal) { "¥${"%.0f".format(maxVal / 100.0)}" }
 
     Card(modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(start = 4.dp, end = 12.dp, top = 12.dp, bottom = 4.dp)) {
-            Row {
-                // Y axis labels
-                Column(modifier = Modifier.width(labelWidth).height(180.dp)) {
-                    yLabels.reversed().forEachIndexed { index, label ->
-                        Box(
-                            modifier = Modifier
-                                .weight(if (index == yLabels.lastIndex) 0f else 1f)
-                                .fillMaxWidth(),
-                            contentAlignment = Alignment.CenterEnd
-                        ) {
-                            Text(
-                                if (label == 0L) "0" else "${label / 100}",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = textColor,
-                                maxLines = 1
-                            )
-                        }
-                    }
+        Column(modifier = Modifier.padding(start = 8.dp, end = 12.dp, top = 8.dp, bottom = 4.dp)) {
+            // Max value label
+            Text(maxLabel, style = MaterialTheme.typography.labelSmall, color = textColor)
+            Canvas(modifier = Modifier.fillMaxWidth().height(180.dp)) {
+                val stepX = size.width / monthSummaries.size
+                val gridColor = textColor.copy(alpha = 0.12f)
+
+                // Horizontal grid lines at 25%, 50%, 75%
+                for (pct in listOf(0.25f, 0.5f, 0.75f)) {
+                    val y = size.height * (1f - pct)
+                    drawLine(gridColor, Offset(0f, y), Offset(size.width, y), strokeWidth = 1.dp.toPx())
                 }
-                // Chart area
-                Canvas(modifier = Modifier.weight(1f).height(180.dp)) {
-                    val stepX = size.width / monthSummaries.size
-                    val gridColor = textColor.copy(alpha = 0.15f)
 
-                    // Horizontal grid lines
-                    yLabels.forEach { v ->
-                        val y = size.height - (v.toFloat() / maxVal) * size.height
-                        drawLine(gridColor, Offset(0f, y), Offset(size.width, y), strokeWidth = 1.dp.toPx())
-                    }
-
-                    monthSummaries.forEachIndexed { index, m ->
-                        val x = index * stepX + stepX / 2
-                        val incomeH = (m.income.toFloat() / maxVal) * size.height
-                        val expenseH = (m.expense.toFloat() / maxVal) * size.height
-                        val barW = stepX * 0.3f
-                        drawRect(
-                            color = IncomeGreen.copy(alpha = 0.7f),
-                            topLeft = Offset(x - barW - stepX * 0.05f, size.height - incomeH),
-                            size = Size(barW, incomeH)
-                        )
-                        drawRect(
-                            color = ExpenseRed.copy(alpha = 0.7f),
-                            topLeft = Offset(x + stepX * 0.05f, size.height - expenseH),
-                            size = Size(barW, expenseH)
-                        )
-                    }
+                monthSummaries.forEachIndexed { index, m ->
+                    val x = index * stepX + stepX / 2
+                    val incomeH = (m.income.toFloat() / maxVal) * size.height
+                    val expenseH = (m.expense.toFloat() / maxVal) * size.height
+                    val barW = stepX * 0.3f
+                    drawRect(
+                        color = IncomeGreen.copy(alpha = 0.7f),
+                        topLeft = Offset(x - barW - stepX * 0.05f, size.height - incomeH),
+                        size = Size(barW, incomeH)
+                    )
+                    drawRect(
+                        color = ExpenseRed.copy(alpha = 0.7f),
+                        topLeft = Offset(x + stepX * 0.05f, size.height - expenseH),
+                        size = Size(barW, expenseH)
+                    )
                 }
             }
-            // Legend
-            Row(modifier = Modifier.fillMaxWidth().padding(start = labelWidth), horizontalArrangement = Arrangement.Center) {
-                Canvas(modifier = Modifier.size(8.dp)) { drawCircle(color = IncomeGreen) }
-                Text(" 收入  ", style = MaterialTheme.typography.labelSmall)
-                Canvas(modifier = Modifier.size(8.dp)) { drawCircle(color = ExpenseRed) }
-                Text(" 支出", style = MaterialTheme.typography.labelSmall)
-            }
-            // X labels
-            Spacer(modifier = Modifier.height(4.dp))
+            // Bottom row: ¥0 label, legend, X labels
             Row(
-                modifier = Modifier.fillMaxWidth().padding(start = labelWidth),
-                horizontalArrangement = Arrangement.SpaceBetween
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
+                Text("¥0", style = MaterialTheme.typography.labelSmall, color = textColor)
+                Row(horizontalArrangement = Arrangement.Center) {
+                    Canvas(modifier = Modifier.size(8.dp)) { drawCircle(color = IncomeGreen) }
+                    Text(" 收入  ", style = MaterialTheme.typography.labelSmall)
+                    Canvas(modifier = Modifier.size(8.dp)) { drawCircle(color = ExpenseRed) }
+                    Text(" 支出", style = MaterialTheme.typography.labelSmall)
+                }
                 if (monthSummaries.isNotEmpty()) {
-                    val first = monthSummaries.first()
                     val last = monthSummaries.last()
-                    Text("${first.month}月", style = MaterialTheme.typography.labelSmall, color = textColor)
                     Text("${last.month}月", style = MaterialTheme.typography.labelSmall, color = textColor)
                 }
             }

@@ -106,45 +106,27 @@ class StatisticsViewModel @Inject constructor(
             )
         }
 
+        // Reactive: observe transactions Flow for income/expense totals
         monthDataJob = viewModelScope.launch {
             transactionRepo.getByDateRange(startDate, endDate).collect { transactions ->
                 val confirmed = transactions.filter { it.status == TransactionStatus.CONFIRMED }
                 val income = confirmed.filter { it.type == TransactionType.INCOME }.sumOf { it.amount }
                 val expense = confirmed.filter { it.type == TransactionType.EXPENSE }.sumOf { it.amount }
 
-                // Category sums for expense
-                val expenseTxs = confirmed.filter { it.type == TransactionType.EXPENSE }
-                val catMap = mutableMapOf<String, Long>()
-                expenseTxs.forEach { tx ->
-                    val key = tx.note ?: "其他支出"
-                    catMap[key] = (catMap[key] ?: 0) + tx.amount
-                }
-                val catSums = catMap.entries
-                    .sortedByDescending { it.value }
-                    .map { CategorySum(it.key, it.value) }
-
-                // Daily summaries
-                val dailyMap = mutableMapOf<Long, Pair<Long, Long>>()
-                transactions.filter { it.status == TransactionStatus.CONFIRMED }.forEach { tx ->
-                    val (inc, exp) = dailyMap.getOrDefault(tx.date, Pair(0L, 0L))
-                    if (tx.type == TransactionType.INCOME) dailyMap[tx.date] = Pair(inc + tx.amount, exp)
-                    else dailyMap[tx.date] = Pair(inc, exp + tx.amount)
-                }
-                val dailySummaries = dailyMap.entries
-                    .sortedBy { it.key }
-                    .map { DailySummary(it.key, it.value.first, it.value.second) }
-
                 _state.update {
-                    it.copy(
-                        totalIncome = income,
-                        totalExpense = expense,
-                        categorySums = catSums,
-                        dailySummaries = dailySummaries,
-                        isLoading = false
-                    )
+                    it.copy(totalIncome = income, totalExpense = expense)
                 }
             }
         }
+
+        // Category sums: one-shot query (non-reactive, updates on month change)
+        viewModelScope.launch {
+            val catSums = transactionRepo.getExpenseByCategory(startDate, endDate)
+            _state.update { it.copy(categorySums = catSums, isLoading = false) }
+        }
+
+        // Daily data: separate reactive Flow for the selected range
+        observeDailyData()
     }
 
     private fun observeDailyData() {
@@ -162,16 +144,11 @@ class StatisticsViewModel @Inject constructor(
                     if (tx.type == TransactionType.INCOME) dailyMap[tx.date] = Pair(inc + tx.amount, exp)
                     else dailyMap[tx.date] = Pair(inc, exp + tx.amount)
                 }
-                val dailySummaries = dailyMap.entries
-                    .sortedBy { it.key }
-                    .map { DailySummary(it.key, it.value.first, it.value.second) }
-
                 // Fill in missing dates with zero
                 val filled = (startDate..endDate).map { date ->
                     dailyMap[date]?.let { DailySummary(date, it.first, it.second) }
                         ?: DailySummary(date, 0, 0)
                 }
-
                 _state.update { it.copy(dailySummaries = filled) }
             }
         }
