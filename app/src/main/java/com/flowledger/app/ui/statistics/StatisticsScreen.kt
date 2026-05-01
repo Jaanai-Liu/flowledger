@@ -1,7 +1,6 @@
 package com.flowledger.app.ui.statistics
 
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -132,9 +131,9 @@ fun StatisticsScreen(
                 // 4. Daily expense line chart
                 item {
                     if (state.dailySummaries.isEmpty()) {
-                        EmptyChartPlaceholder("暂无每日数据")
+                        EmptyChartPlaceholder()
                     } else {
-                        DailyLineChart(dailySummaries = state.dailySummaries, range = state.selectedRange)
+                        DailyLineChart(dailySummaries = state.dailySummaries)
                     }
                     Spacer(modifier = Modifier.height(20.dp))
                 }
@@ -250,7 +249,7 @@ private fun MonthSummaryCard(income: Long, expense: Long) {
 }
 
 @Composable
-private fun DailyLineChart(dailySummaries: List<DailySummary>, range: ChartRange) {
+private fun DailyLineChart(dailySummaries: List<DailySummary>) {
     val maxVal = dailySummaries.maxOf { it.expense }.coerceAtLeast(1)
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp)) {
@@ -433,13 +432,13 @@ private fun MonthOverMonthChart(monthSummaries: List<MonthSummary>) {
 }
 
 @Composable
-private fun EmptyChartPlaceholder(message: String) {
+private fun EmptyChartPlaceholder() {
     Card(modifier = Modifier.fillMaxWidth()) {
         Box(
             modifier = Modifier.fillMaxWidth().height(120.dp),
             contentAlignment = Alignment.Center
         ) {
-            Text(message, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text("暂无每日数据", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }
