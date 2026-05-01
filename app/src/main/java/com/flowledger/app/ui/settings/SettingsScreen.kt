@@ -39,7 +39,6 @@ import androidx.compose.ui.unit.dp
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(
-    onNavigateToAccounts: () -> Unit,
     onNavigateToCategories: () -> Unit,
     onNavigateToPaymentMethods: () -> Unit,
     onNavigateToRecurring: () -> Unit,
@@ -58,7 +57,6 @@ fun ProfileScreen(
         ) {
             item {
                 SettingsSection("收支管理")
-                SettingsItem("账户管理", Icons.Rounded.AccountBalance, onClick = onNavigateToAccounts)
                 SettingsItem("分类管理", Icons.Rounded.Category, onClick = onNavigateToCategories)
                 SettingsItem("支付方式", Icons.Rounded.Payment, onClick = onNavigateToPaymentMethods)
                 SettingsItem("周期收支", Icons.Rounded.Repeat, onClick = onNavigateToRecurring)

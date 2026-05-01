@@ -184,15 +184,6 @@ fun AddEditTransactionScreen(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Account dropdown
-                AccountDropdown(
-                    selectedId = state.accountId,
-                    accounts = state.accounts,
-                    onSelected = { viewModel.updateAccount(it) }
-                )
-
-                Spacer(modifier = Modifier.height(16.dp))
-
                 // Payment method dropdown
                 PaymentMethodDropdown(
                     selectedId = state.paymentMethodId,
@@ -268,45 +259,6 @@ private fun CategoryDropdown(
                     text = { Text(category.name) },
                     onClick = {
                         onSelected(category.id)
-                        expanded = false
-                    }
-                )
-            }
-        }
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun AccountDropdown(
-    selectedId: Long?,
-    accounts: List<com.flowledger.app.data.local.entity.AccountEntity>,
-    onSelected: (Long) -> Unit
-) {
-    var expanded by remember { mutableStateOf(false) }
-    val selectedName = accounts.find { it.id == selectedId }?.name ?: "选择账户"
-
-    ExposedDropdownMenuBox(
-        expanded = expanded,
-        onExpandedChange = { expanded = it }
-    ) {
-        OutlinedTextField(
-            value = selectedName,
-            onValueChange = {},
-            readOnly = true,
-            label = { Text("账户") },
-            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-            modifier = Modifier.fillMaxWidth().menuAnchor(androidx.compose.material3.MenuAnchorType.PrimaryNotEditable)
-        )
-        ExposedDropdownMenu(
-            expanded = expanded,
-            onDismissRequest = { expanded = false }
-        ) {
-            accounts.forEach { account ->
-                DropdownMenuItem(
-                    text = { Text(account.name) },
-                    onClick = {
-                        onSelected(account.id)
                         expanded = false
                     }
                 )

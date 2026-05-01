@@ -8,8 +8,6 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
-import com.flowledger.app.ui.account.AccountDetailScreen
-import com.flowledger.app.ui.account.AccountManageScreen
 import com.flowledger.app.ui.category.CategoryManageScreen
 import com.flowledger.app.ui.dashboard.DashboardScreen
 import com.flowledger.app.ui.lock.LockScreen
@@ -70,7 +68,6 @@ fun NavGraph(navController: NavHostController) {
 
         composable(Screen.Profile.route) {
             ProfileScreen(
-                onNavigateToAccounts = { navController.navigate(Screen.Accounts.route) },
                 onNavigateToCategories = { navController.navigate(Screen.Categories.route) },
                 onNavigateToPaymentMethods = { navController.navigate(Screen.PaymentMethods.route) },
                 onNavigateToRecurring = { navController.navigate(Screen.RecurringRules.route) },
@@ -105,26 +102,6 @@ fun NavGraph(navController: NavHostController) {
                 onNavigateToEdit = { tid ->
                     navController.navigate(Screen.AddTransaction.createRoute(tid))
                 }
-            )
-        }
-
-        composable(Screen.Accounts.route) {
-            AccountManageScreen(
-                onNavigateBack = { navController.popBackStack() },
-                onNavigateToDetail = { id ->
-                    navController.navigate(Screen.AccountDetail.createRoute(id))
-                }
-            )
-        }
-
-        composable(
-            route = Screen.AccountDetail.route,
-            arguments = listOf(navArgument("id") { type = NavType.LongType })
-        ) { backStackEntry ->
-            val id = backStackEntry.arguments?.getLong("id") ?: return@composable
-            AccountDetailScreen(
-                accountId = id,
-                onNavigateBack = { navController.popBackStack() }
             )
         }
 

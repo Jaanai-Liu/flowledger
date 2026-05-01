@@ -120,11 +120,11 @@ class TransactionViewModel @Inject constructor(
                         _editState.update { state -> state.copy(categories = categories) }
                     }
                 } else {
-                    _editState.update { it.copy(isLoaded = true) }
+                    _editState.update { it.copy(accountId = 1L, isLoaded = true) }
                 }
             }
         } else {
-            _editState.update { it.copy(isLoaded = true) }
+            _editState.update { it.copy(accountId = 1L, isLoaded = true) }
         }
     }
 
@@ -169,7 +169,7 @@ class TransactionViewModel @Inject constructor(
             return
         }
 
-        if (amountInCents <= 0 || state.categoryId == null || state.accountId == null) return
+        if (amountInCents <= 0 || state.categoryId == null) return
 
         _editState.update { it.copy(isSaving = true) }
 

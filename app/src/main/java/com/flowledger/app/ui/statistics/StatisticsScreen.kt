@@ -1,6 +1,7 @@
 package com.flowledger.app.ui.statistics
 
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -20,6 +21,7 @@ import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
@@ -27,11 +29,15 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -67,6 +73,7 @@ fun StatisticsScreen(
     val state by viewModel.state.collectAsState()
     val now = LocalDate.now()
     val canGoNext = state.currentYear < now.year || state.currentMonth < now.monthValue
+    var showMonthPicker by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -97,7 +104,8 @@ fun StatisticsScreen(
                         label = state.monthLabel,
                         canGoNext = canGoNext,
                         onPrevious = { viewModel.previousMonth() },
-                        onNext = { viewModel.nextMonth() }
+                        onNext = { viewModel.nextMonth() },
+                        onLabelClick = { showMonthPicker = true }
                     )
                     Spacer(modifier = Modifier.height(12.dp))
                 }
@@ -174,6 +182,21 @@ fun StatisticsScreen(
             }
         }
     }
+
+    // Month picker dialog
+    if (showMonthPicker) {
+        val years = (now.year - 5..now.year).toList()
+        MonthPickerDialog(
+            currentYear = state.currentYear,
+            currentMonth = state.currentMonth,
+            years = years,
+            onDismiss = { showMonthPicker = false },
+            onConfirm = { year, month ->
+                viewModel.navigateToMonth(year, month)
+                showMonthPicker = false
+            }
+        )
+    }
 }
 
 @Composable
@@ -181,7 +204,8 @@ private fun MonthSelector(
     label: String,
     canGoNext: Boolean,
     onPrevious: () -> Unit,
-    onNext: () -> Unit
+    onNext: () -> Unit,
+    onLabelClick: () -> Unit
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -194,8 +218,11 @@ private fun MonthSelector(
         Text(
             label,
             style = MaterialTheme.typography.titleMedium,
-            modifier = Modifier.width(120.dp),
-            textAlign = TextAlign.Center
+            modifier = Modifier
+                .width(120.dp)
+                .clickable(onClick = onLabelClick),
+            textAlign = TextAlign.Center,
+            color = MaterialTheme.colorScheme.primary
         )
         IconButton(onClick = onNext, enabled = canGoNext) {
             Icon(
@@ -445,4 +472,81 @@ private fun EmptyChartPlaceholder() {
             Text("暂无每日数据", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
+}
+
+@Composable
+private fun MonthPickerDialog(
+    currentYear: Int,
+    currentMonth: Int,
+    years: List<Int>,
+    onDismiss: () -> Unit,
+    onConfirm: (year: Int, month: Int) -> Unit
+) {
+    var selectedYear by remember { mutableStateOf(currentYear) }
+    var selectedMonth by remember { mutableStateOf(currentMonth) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("选择年月") },
+        text = {
+            Column {
+                // Year row with left/right arrows
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    IconButton(onClick = {
+                        val idx = years.indexOf(selectedYear)
+                        if (idx > 0) selectedYear = years[idx - 1]
+                    }) {
+                        Icon(Icons.AutoMirrored.Rounded.KeyboardArrowLeft, contentDescription = null)
+                    }
+                    Text(
+                        "${selectedYear}年",
+                        style = MaterialTheme.typography.titleMedium
+                    )
+                    IconButton(onClick = {
+                        val idx = years.indexOf(selectedYear)
+                        if (idx < years.lastIndex) selectedYear = years[idx + 1]
+                    }) {
+                        Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, contentDescription = null)
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // Month grid: 3 columns × 4 rows
+                val months = listOf("1月", "2月", "3月", "4月", "5月", "6月", "7月", "8月", "9月", "10月", "11月", "12月")
+                for (row in 0..3) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceEvenly
+                    ) {
+                        for (col in 0..2) {
+                            val idx = row * 3 + col
+                            if (idx < 12) {
+                                val isSelected = selectedMonth == idx + 1
+                                FilterChip(
+                                    selected = isSelected,
+                                    onClick = { selectedMonth = idx + 1 },
+                                    label = { Text(months[idx]) }
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = { onConfirm(selectedYear, selectedMonth) }) {
+                Text("确定")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("取消")
+            }
+        }
+    )
 }
