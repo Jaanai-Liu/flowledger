@@ -13,6 +13,9 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -31,6 +34,7 @@ import androidx.compose.material.icons.automirrored.rounded.TrendingUp
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -90,6 +94,22 @@ fun DashboardScreen(
                 item { MonthSummaryCard(state) }
 
                 item { Spacer(modifier = Modifier.height(16.dp)) }
+
+                // Notification permission prompt
+                item {
+                    val context = LocalContext.current
+                    val isListenerEnabled = remember {
+                        com.flowledger.app.util.NotificationPermissionHelper.isListenerEnabled(context)
+                    }
+                    if (!isListenerEnabled) {
+                        NotificationPermissionBanner(
+                            onClick = {
+                                com.flowledger.app.util.NotificationPermissionHelper.openNotificationSettings(context)
+                            }
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                    }
+                }
 
                 if (state.pendingCount > 0) {
                     item {
@@ -216,6 +236,39 @@ private fun PendingBanner(count: Int) {
             style = MaterialTheme.typography.labelLarge,
             color = MaterialTheme.colorScheme.onTertiaryContainer
         )
+    }
+}
+
+@Composable
+private fun NotificationPermissionBanner(onClick: () -> Unit) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.errorContainer
+        )
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(
+                "通知监听未开启",
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.onErrorContainer
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                "开启后可自动识别微信、支付宝等支付通知，实现自动记账。数据完全本地存储。",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onErrorContainer
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+            Button(
+                onClick = onClick,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.error
+                )
+            ) {
+                Text("前往开启")
+            }
+        }
     }
 }
 
