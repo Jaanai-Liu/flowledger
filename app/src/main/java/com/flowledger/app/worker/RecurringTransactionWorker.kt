@@ -43,7 +43,7 @@ class RecurringTransactionWorker @AssistedInject constructor(
                     val targetDay = rule.dayOfWeek ?: 1
                     todayDayOfWeek == targetDay &&
                             (rule.lastGeneratedDate == null ||
-                                    DateUtils.fromEpochDay(rule.lastGeneratedDate!!) < todayEpochDay - 6)
+                                    rule.lastGeneratedDate!! < todayEpochDay - 6)
                 }
                 com.flowledger.app.data.local.entity.RecurringFrequency.YEARLY -> {
                     val targetDay = rule.dayOfMonth ?: 1

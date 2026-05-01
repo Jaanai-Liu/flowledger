@@ -27,8 +27,8 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
-import androidx.compose.material.icons.rounded.TrendingDown
-import androidx.compose.material.icons.rounded.TrendingUp
+import androidx.compose.material.icons.automirrored.rounded.TrendingDown
+import androidx.compose.material.icons.automirrored.rounded.TrendingUp
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -175,13 +175,13 @@ fun MonthSummaryCard(state: DashboardState) {
                 SummaryItem(
                     label = "收入",
                     amount = state.monthIncome,
-                    icon = Icons.Rounded.TrendingUp,
+                    icon = Icons.AutoMirrored.Rounded.TrendingUp,
                     color = IncomeGreen
                 )
                 SummaryItem(
                     label = "支出",
                     amount = state.monthExpense,
-                    icon = Icons.Rounded.TrendingDown,
+                    icon = Icons.AutoMirrored.Rounded.TrendingDown,
                     color = ExpenseRed
                 )
             }
