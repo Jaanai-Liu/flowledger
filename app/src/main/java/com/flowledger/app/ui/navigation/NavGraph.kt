@@ -179,14 +179,12 @@ fun NavGraph(navController: NavHostController) {
 
 @Composable
 fun ProfileScreen(
-    onNavigateToAccounts: () -> Unit,
     onNavigateToCategories: () -> Unit,
     onNavigateToPaymentMethods: () -> Unit,
     onNavigateToRecurring: () -> Unit,
     onNavigateToSettings: () -> Unit
 ) {
     com.flowledger.app.ui.settings.ProfileScreen(
-        onNavigateToAccounts = onNavigateToAccounts,
         onNavigateToCategories = onNavigateToCategories,
         onNavigateToPaymentMethods = onNavigateToPaymentMethods,
         onNavigateToRecurring = onNavigateToRecurring,
