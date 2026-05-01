@@ -355,12 +355,15 @@ private fun CategoryRow(cat: CategorySum, total: Long) {
             modifier = Modifier.weight(1f).height(12.dp).padding(end = 8.dp),
             contentAlignment = Alignment.CenterStart
         ) {
+            val trackColor = MaterialTheme.colorScheme.surfaceVariant
+            val fillColor = ExpenseRed.copy(alpha = 0.6f)
+            val corner = androidx.compose.ui.geometry.CornerRadius(6.dp.toPx())
             // Background track
             Canvas(modifier = Modifier.fillMaxSize()) {
                 drawRoundRect(
-                    color = MaterialTheme.colorScheme.surfaceVariant,
+                    color = trackColor,
                     size = Size(size.width, size.height),
-                    cornerRadius = androidx.compose.ui.geometry.CornerRadius(6.dp.toPx())
+                    cornerRadius = corner
                 )
             }
             // Filled portion
@@ -370,9 +373,9 @@ private fun CategoryRow(cat: CategorySum, total: Long) {
                     .height(12.dp)
             ) {
                 drawRoundRect(
-                    color = ExpenseRed.copy(alpha = 0.6f),
+                    color = fillColor,
                     size = Size(size.width, size.height),
-                    cornerRadius = androidx.compose.ui.geometry.CornerRadius(6.dp.toPx())
+                    cornerRadius = corner
                 )
             }
         }
